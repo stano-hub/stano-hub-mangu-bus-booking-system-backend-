@@ -16,7 +16,8 @@ const app = express();
 // ================== CORS CONFIG ==================
 const allowedOrigins = [
   "http://localhost:3000", // React dev
-  "https://mangu-bus-booking-system.vercel.app", // Vercel frontend
+  "https://mangu-bus-booking-system.vercel.app",
+  "*" // Vercel frontend
 ];
 
 app.use(
