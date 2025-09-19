@@ -1,4 +1,3 @@
-// app.js
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
@@ -15,17 +14,28 @@ connectDB();
 const app = express();
 
 // ================== CORS CONFIG ==================
+const allowedOrigins = [
+  "http://localhost:3000", // React dev
+  "https://mangu-bus-booking-system.vercel.app", // Vercel frontend
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000", // React dev
-      "https://mangu-bus-booking-system.vercel.app/", // Vercel frontend
-    ],
-    credentials: true, // allow cookies/sessions
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // Allow cookies/sessions
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Handle CORS preflight requests
+app.options("*", cors());
 
 // ================== MIDDLEWARE ==================
 app.use(express.json());
@@ -42,7 +52,7 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // only https in prod
+      secure: process.env.NODE_ENV === "production", // HTTPS in prod
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
@@ -50,25 +60,19 @@ app.use(
 );
 
 // ================== ROUTES ==================
-
-// Auth (Register, Login, Logout)
 app.use("/api/auth", require("./routes/auth"));
-
-// Teacher management (Admin adds/edits/removes teachers)
 app.use("/api/teachers", require("./routes/teachers"));
-
-// Teacher profile management (update/view their own profile)
 app.use("/api/profile", require("./routes/profile"));
-
-// Bus management
 app.use("/api/buses", require("./routes/bus"));
-
-// Bookings (create, view, edit, cancel)
 app.use("/api/bookings", require("./routes/bookings"));
+app.use("/api/admin", require("./routes/adminDashboard"));
+app.use("/api/teacher", require("./routes/teacherDashboard"));
 
-// Dashboards
-app.use("/api/admin", require("./routes/adminDashboard"));     // Admin-specific
-app.use("/api/teacher", require("./routes/teacherDashboard")); // Teacher-specific
+// ================== ERROR HANDLING ==================
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: err.message || "Server error" });
+});
 
 // ================== SERVER START ==================
 const PORT = process.env.PORT || 5000;
