@@ -16,27 +16,30 @@ const app = express();
 // ================== CORS CONFIG ==================
 const allowedOrigins = [
   "http://localhost:3000", // React dev
-  "https://mangu-bus-booking-system.vercel.app",
-  "*" // Vercel frontend
+  "https://mangu-bus-booking-system.vercel.app" // Vercel frontend
 ];
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like Postman, curl)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // Allow cookies/sessions
+    credentials: true, // allow cookies/sessions
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Handle CORS preflight requests
-app.options("*", cors());
+// Explicitly handle OPTIONS preflight
+app.options("*", cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
 // ================== MIDDLEWARE ==================
 app.use(express.json());
@@ -53,8 +56,8 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // HTTPS in prod
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // only over HTTPS in prod
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
   })
